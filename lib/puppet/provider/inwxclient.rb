@@ -4,19 +4,18 @@ require 'openssl'
 require 'inwx-domrobot'
 require 'pp'
 
+# inwx client to communicate with inwx domrobot api
 class Puppet::Provider::INWXCLIENT < Puppet::Provider
+  attr_accessor :domrobot
+
   class << self
   end
 
-  $domrobot = nil
-
   def login(username, password, debug)
-    if $domrobot != nil
-      return $domrobot
-    end
+    return @domrobot unless @domrobot.nil?
 
-    $domrobot = INWX::Domrobot.new
-    result = $domrobot.set_language('en')
+    @domrobot = INWX::Domrobot.new
+    result = @domrobot.set_language('en')
                       .use_live
                       .use_json
                       .debug(debug)
@@ -26,14 +25,12 @@ class Puppet::Provider::INWXCLIENT < Puppet::Provider
       return nil
     end
 
-    $domrobot
+    @domrobot
   end
 
-  def logout()
-    if $domrobot != nil
-      $domrobot.logout
-    end
-    $domrobot = nil
+  def logout
+    @domrobot.logout unless @domrobot.nil?
+    @domrobot = nil
   end
 
   def domain_info(username, password, debug, domain, name, content, entry_type)
@@ -42,10 +39,10 @@ class Puppet::Provider::INWXCLIENT < Puppet::Provider
     object = 'nameserver'
     method = 'info'
     params = {
-        'domain' => domain,
-        'name' => "#{name}.#{domain}",
-        'type' => entry_type,
-        'content' => content,
+      'domain' => domain,
+      'name' => "#{name}.#{domain}",
+      'type' => entry_type,
+      'content' => content,
     }
 
     begin
@@ -83,21 +80,21 @@ class Puppet::Provider::INWXCLIENT < Puppet::Provider
   def delete_domain(username, password, debug, domain, name, content, entry_type)
     result = domain_info(username, password, debug, domain, name, content, entry_type)
 
-    if result['resData']['count'] == 1
-      domrobot = login(username, password)
+    return unless result['resData']['count'] == 1
 
-      object = 'nameserver'
-      method = 'deleterecord'
-      params = {
-          'id' => result['resData']['record'][0]['id'],
-      }
+    domrobot = login(username, password)
 
-      begin
-        result = domrobot.call(object, method, params)
-        return result['code'] == 1000
-      ensure
-        logout
-      end
+    object = 'nameserver'
+    method = 'deleterecord'
+    params = {
+      'id' => result['resData']['record'][0]['id'],
+    }
+
+    begin
+      result = domrobot.call(object, method, params)
+      return result['code'] == 1000
+    ensure
+      logout
     end
   end
 end

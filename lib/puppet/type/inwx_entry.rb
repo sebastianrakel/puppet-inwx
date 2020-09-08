@@ -6,7 +6,7 @@ Puppet::Type.newtype(:inwx_entry) do
     defaultto :present
   end
 
-  newparam(:name, :namevar => true) do
+  newparam(:name, namevar: true) do
     desc 'Name of Entry'
   end
 
