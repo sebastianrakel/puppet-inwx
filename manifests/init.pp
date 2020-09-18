@@ -5,4 +5,8 @@
 # @example
 #   include inwx
 class inwx {
+  package { 'inwx-domrobot':
+    ensure => 'present',
+    provider => 'puppet_gem',
+  }
 }
